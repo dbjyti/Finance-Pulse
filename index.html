@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finance Pulse</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
   :root {
     --bg:#0b0f1a; --surface:#111827; --surface2:#1a2235; --surface3:#1f2d42;
@@ -172,6 +174,19 @@
   select:focus{border-color:var(--blue);}
   select option{background:var(--surface);}
 
+  /* PDF BUTTONS */
+  .pdf-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:10px;font-family:'Sora',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid;white-space:nowrap;letter-spacing:.3px;}
+  .pdf-btn-month{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.3);color:#a78bfa;}
+  .pdf-btn-month:hover{background:rgba(167,139,250,.18);box-shadow:0 0 16px rgba(167,139,250,.2);}
+  .pdf-btn-year{background:rgba(45,212,191,.1);border-color:rgba(45,212,191,.3);color:#2dd4bf;}
+  .pdf-btn-year:hover{background:rgba(45,212,191,.18);box-shadow:0 0 16px rgba(45,212,191,.2);}
+  .pdf-btn svg{width:14px;height:14px;flex-shrink:0;}
+  .pdf-btn.loading{opacity:.6;pointer-events:none;}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:28px;right:28px;background:#1a2235;border:1px solid rgba(0,214,143,.25);color:var(--green);font-family:'Sora',sans-serif;font-size:12px;font-weight:500;padding:12px 20px;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.4);z-index:9999;transform:translateY(80px);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);}
+  .toast.show{transform:translateY(0);opacity:1;}
+
   @media(max-width:860px){.grid-main{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr 1fr}.left-panel{position:static}.pie-wrap{flex-direction:column}.two-col{grid-template-columns:1fr}.h-grid-head,.h-row{grid-template-columns:100px 1fr 1fr 1fr;} .h-grid-head span:nth-child(3),.h-grid-head span:nth-child(4),.h-row .h-val:nth-child(3),.h-row .h-val:nth-child(4){display:none;}}
   @media(max-width:500px){.stats-row{grid-template-columns:1fr}.app{padding:20px 16px 60px}.nav-row{gap:8px;}}
 </style>
@@ -196,6 +211,14 @@
     </div>
     <button class="copy-btn" onclick="copyPrevMonth()">⬆ Copy from previous month</button>
     <div class="month-tag" id="month-tag">● Current Month</div>
+    <button class="pdf-btn pdf-btn-month" id="dl-month-btn" onclick="downloadMonthlyPDF()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+      Download Monthly PDF
+    </button>
+    <button class="pdf-btn pdf-btn-year" onclick="downloadYearlyPDF()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+      Download Yearly PDF
+    </button>
   </div>
 
   <!-- TABS -->
@@ -681,6 +704,372 @@ function switchTab(tab){
 }
 
 init();
+
+// ═══════════════════════════════════════════
+// ── PDF EXPORT ──
+// ═══════════════════════════════════════════
+
+function showToast(msg){
+  let t=document.getElementById('fp-toast');
+  if(!t){t=document.createElement('div');t.id='fp-toast';t.className='toast';document.body.appendChild(t);}
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── Shared PDF helpers ──
+function pdfHeader(doc, title, subtitle){
+  const W=doc.internal.pageSize.getWidth();
+  // Dark header bar
+  doc.setFillColor(11,15,26);
+  doc.rect(0,0,W,38,'F');
+  // Accent line
+  doc.setFillColor(0,214,143);
+  doc.rect(0,38,W,2,'F');
+  // Logo text
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(16);
+  doc.setTextColor(232,237,245);
+  doc.text('Finance',14,24);
+  doc.setTextColor(0,214,143);
+  doc.text('Pulse',14+doc.getTextWidth('Finance')+2,24);
+  // Title
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(107,127,163);
+  doc.text(title,14,33);
+  // Right: generated date
+  const gd='Generated '+new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  doc.setFontSize(8);
+  doc.text(gd,W-14,33,{align:'right'});
+  // Subtitle
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.setTextColor(232,237,245);
+  doc.text(subtitle,14,54);
+  return 62; // y cursor
+}
+
+function pdfSummaryBox(doc, y, items){
+  // items: [{label, value, color:[r,g,b]}]
+  const W=doc.internal.pageSize.getWidth();
+  const cols=Math.min(items.length,3);
+  const boxW=(W-28)/cols;
+  items.forEach((item,i)=>{
+    const x=14+i*boxW;
+    doc.setFillColor(26,34,53);
+    doc.roundedRect(x,y,boxW-4,32,3,3,'F');
+    doc.setFont('helvetica','normal');
+    doc.setFontSize(7);
+    doc.setTextColor(107,127,163);
+    doc.text(item.label.toUpperCase(),x+8,y+10);
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(13);
+    doc.setTextColor(...(item.color||[232,237,245]));
+    doc.text(item.value,x+8,y+24);
+  });
+  return y+40;
+}
+
+function autoTableStyle(){
+  return {
+    styles:{font:'helvetica',fontSize:9,cellPadding:{top:7,bottom:7,left:8,right:8},textColor:[200,210,230],lineColor:[30,45,69],lineWidth:.3},
+    headStyles:{fillColor:[17,24,39],textColor:[107,127,163],fontStyle:'bold',fontSize:8,cellPadding:{top:8,bottom:8,left:8,right:8}},
+    alternateRowStyles:{fillColor:[26,34,53]},
+    bodyStyles:{fillColor:[17,24,39]},
+  };
+}
+
+function fmt(n){return '$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtS(n){return(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function fmtN(n){return(n<0?'-':'')+'$'+Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});}
+
+// ── MONTHLY PDF ──
+function downloadMonthlyPDF(){
+  const btn=document.getElementById('dl-month-btn');
+  btn.classList.add('loading');btn.textContent='Generating…';
+
+  setTimeout(()=>{
+    try{
+      const {jsPDF}=window.jspdf;
+      const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const data=getMonthData(curKey());
+      const gross=data.salary+data.otherIncome;
+      const tax=gross*(data.taxRate/100);
+      const net=gross-tax;
+      const expenses=data.expenses.reduce((s,e)=>s+(e.amount||0),0);
+      const remaining=net-expenses;
+      const rate=gross>0?(remaining/gross*100):0;
+      const W=doc.internal.pageSize.getWidth();
+      const monthLabel=MONTHS[curM]+' '+curY;
+
+      let y=pdfHeader(doc,'MONTHLY FINANCIAL REPORT',monthLabel);
+
+      // Summary boxes row 1
+      y=pdfSummaryBox(doc,y,[
+        {label:'Gross Income',value:fmt(gross),color:[77,159,255]},
+        {label:'Tax Deducted',value:fmt(tax),color:[255,140,66]},
+        {label:'Net Income',value:fmt(net),color:[232,237,245]},
+      ]);
+
+      // Summary boxes row 2
+      y=pdfSummaryBox(doc,y,[
+        {label:'Total Expenses',value:fmt(expenses),color:[255,77,109]},
+        {label:'Remaining Balance',value:fmtS(remaining),color:remaining>=0?[0,214,143]:[255,77,109]},
+        {label:'Savings Rate',value:rate.toFixed(1)+'%',color:rate>=0?[0,214,143]:[255,77,109]},
+      ]);
+
+      y+=4;
+
+      // Progress bar visual
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(8);
+      doc.setTextColor(107,127,163);
+      doc.text('SPENDING PROGRESS',14,y);
+      const spentPct=net>0?Math.min(expenses/net,1):0;
+      const barW=W-28;
+      doc.setFillColor(26,34,53);
+      doc.roundedRect(14,y+3,barW,7,2,2,'F');
+      const fillW=barW*spentPct;
+      if(fillW>0){
+        const rc=spentPct>=1?[255,77,109]:spentPct>=.8?[255,140,66]:[0,214,143];
+        doc.setFillColor(...rc);
+        doc.roundedRect(14,y+3,fillW,7,2,2,'F');
+      }
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8);
+      doc.setTextColor(...(spentPct>=1?[255,77,109]:spentPct>=.8?[255,140,66]:[0,214,143]));
+      doc.text((spentPct*100).toFixed(1)+'% of net income spent',14+barW+2,y+8,{align:'left'});
+      y+=18;
+
+      // Expense table
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.setTextColor(107,127,163);
+      doc.text('EXPENSE BREAKDOWN',14,y);
+      y+=4;
+
+      const rows=data.expenses.map(e=>[
+        e.name,
+        fmt(e.amount||0),
+        gross>0?((e.amount||0)/gross*100).toFixed(1)+'%':'—',
+        net>0?((e.amount||0)/net*100).toFixed(1)+'%':'—',
+      ]);
+      rows.push(['','','','']);
+      rows.push([{content:'TOTAL EXPENSES',styles:{fontStyle:'bold',textColor:[232,237,245]}},
+        {content:fmt(expenses),styles:{fontStyle:'bold',textColor:[255,140,66]}},
+        {content:gross>0?(expenses/gross*100).toFixed(1)+'%':'—',styles:{fontStyle:'bold'}},
+        {content:net>0?(expenses/net*100).toFixed(1)+'%':'—',styles:{fontStyle:'bold'}},
+      ]);
+
+      doc.autoTable({
+        startY:y,
+        head:[['Category','Amount','% of Gross','% of Net']],
+        body:rows,
+        ...autoTableStyle(),
+        columnStyles:{0:{cellWidth:80},1:{cellWidth:35,halign:'right'},2:{cellWidth:30,halign:'right'},3:{cellWidth:30,halign:'right'}},
+      });
+
+      y=doc.lastAutoTable.finalY+10;
+
+      // Income breakdown table
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.setTextColor(107,127,163);
+      doc.text('INCOME BREAKDOWN',14,y);
+      y+=4;
+
+      doc.autoTable({
+        startY:y,
+        head:[['Description','Amount']],
+        body:[
+          ['Base Salary',fmt(data.salary)],
+          ['Other Income',fmt(data.otherIncome)],
+          ['','' ],
+          [{content:'GROSS INCOME',styles:{fontStyle:'bold',textColor:[77,159,255]}},{content:fmt(gross),styles:{fontStyle:'bold',textColor:[77,159,255]}}],
+          [{content:`Income Tax @ ${data.taxRate}%`,styles:{textColor:[255,140,66]}},{content:'-'+fmt(tax),styles:{textColor:[255,140,66]}}],
+          [{content:'NET INCOME',styles:{fontStyle:'bold',textColor:[232,237,245]}},{content:fmt(net),styles:{fontStyle:'bold'}}],
+          [{content:'Total Expenses',styles:{textColor:[255,77,109]}},{content:'-'+fmt(expenses),styles:{textColor:[255,77,109]}}],
+          [{content:'REMAINING / SAVED',styles:{fontStyle:'bold',textColor:remaining>=0?[0,214,143]:[255,77,109]}},{content:fmtS(remaining),styles:{fontStyle:'bold',textColor:remaining>=0?[0,214,143]:[255,77,109]}}],
+        ],
+        ...autoTableStyle(),
+        columnStyles:{0:{cellWidth:120},1:{cellWidth:55,halign:'right'}},
+      });
+
+      // Footer
+      const pH=doc.internal.pageSize.getHeight();
+      doc.setFillColor(17,24,39);
+      doc.rect(0,pH-12,W,12,'F');
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(7);
+      doc.setTextColor(61,79,110);
+      doc.text('Finance Pulse — Personal Finance Report',14,pH-4);
+      doc.text('Page 1 of 1',W-14,pH-4,{align:'right'});
+
+      doc.save(`FinancePulse_${MONTHS[curM]}_${curY}.pdf`);
+      showToast('✓ Monthly PDF downloaded!');
+    }catch(e){console.error(e);showToast('Error generating PDF. Check console.');}
+
+    btn.classList.remove('loading');
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg> Download Monthly PDF`;
+  },50);
+}
+
+// ── YEARLY PDF ──
+function downloadYearlyPDF(){
+  const now=new Date();
+  const year=curY;
+
+  setTimeout(()=>{
+    try{
+      const {jsPDF}=window.jspdf;
+      const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const W=doc.internal.pageSize.getWidth();
+
+      let y=pdfHeader(doc,'ANNUAL FINANCIAL REPORT','Year '+year);
+
+      // Collect all months for year
+      const monthRows=[];
+      let ytdGross=0,ytdTax=0,ytdExp=0,ytdRem=0,counted=0;
+      for(let m=0;m<12;m++){
+        const key=mkKey(year,m);
+        const stats=monthStats(key);
+        if(stats){
+          monthRows.push([
+            MONTHS[m].slice(0,3),
+            fmtN(stats.gross),
+            fmtN(stats.tax),
+            fmtN(stats.expenses),
+            fmtN(stats.net),
+            {content:fmtN(stats.remaining),styles:{textColor:stats.remaining>=0?[0,214,143]:[255,77,109],fontStyle:'bold'}},
+            {content:stats.rate.toFixed(1)+'%',styles:{textColor:stats.rate>=0?[0,214,143]:[255,77,109]}},
+          ]);
+          ytdGross+=stats.gross;ytdTax+=stats.tax;ytdExp+=stats.expenses;ytdRem+=stats.remaining;counted++;
+        }
+      }
+
+      if(monthRows.length===0){
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(11);
+        doc.setTextColor(107,127,163);
+        doc.text('No data found for '+year+'. Please enter monthly data first.',14,y+10);
+        doc.save(`FinancePulse_Annual_${year}.pdf`);
+        showToast('✓ Yearly PDF downloaded (no data).');
+        return;
+      }
+
+      const ytdRate=ytdGross>0?(ytdRem/ytdGross*100):0;
+
+      // YTD summary boxes
+      y=pdfSummaryBox(doc,y,[
+        {label:'YTD Gross Income',value:fmtN(ytdGross),color:[77,159,255]},
+        {label:'YTD Tax Paid',value:fmtN(ytdTax),color:[255,140,66]},
+        {label:'Months Tracked',value:`${counted} / 12`,color:[232,237,245]},
+      ]);
+      y=pdfSummaryBox(doc,y,[
+        {label:'YTD Total Expenses',value:fmtN(ytdExp),color:[255,77,109]},
+        {label:'YTD Total Saved',value:fmtN(ytdRem),color:ytdRem>=0?[0,214,143]:[255,77,109]},
+        {label:'Avg Savings Rate',value:ytdRate.toFixed(1)+'%',color:ytdRate>=0?[0,214,143]:[255,77,109]},
+      ]);
+      y+=6;
+
+      // Month-by-month table
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(9);
+      doc.setTextColor(107,127,163);
+      doc.text('MONTH-BY-MONTH BREAKDOWN',14,y);
+      y+=4;
+
+      // Totals row
+      monthRows.push([
+        {content:'ANNUAL TOTAL',styles:{fontStyle:'bold',textColor:[232,237,245]}},
+        {content:fmtN(ytdGross),styles:{fontStyle:'bold',textColor:[77,159,255]}},
+        {content:fmtN(ytdTax),styles:{fontStyle:'bold',textColor:[255,140,66]}},
+        {content:fmtN(ytdExp),styles:{fontStyle:'bold',textColor:[255,77,109]}},
+        {content:fmtN(ytdGross-ytdTax),styles:{fontStyle:'bold'}},
+        {content:fmtN(ytdRem),styles:{fontStyle:'bold',textColor:ytdRem>=0?[0,214,143]:[255,77,109]}},
+        {content:ytdRate.toFixed(1)+'%',styles:{fontStyle:'bold',textColor:ytdRate>=0?[0,214,143]:[255,77,109]}},
+      ]);
+
+      doc.autoTable({
+        startY:y,
+        head:[['Month','Gross','Tax','Expenses','Net','Saved','Rate']],
+        body:monthRows,
+        ...autoTableStyle(),
+        columnStyles:{
+          0:{cellWidth:22},1:{cellWidth:28,halign:'right'},2:{cellWidth:24,halign:'right'},
+          3:{cellWidth:28,halign:'right'},4:{cellWidth:28,halign:'right'},
+          5:{cellWidth:28,halign:'right'},6:{cellWidth:22,halign:'right'},
+        },
+      });
+
+      y=doc.lastAutoTable.finalY+10;
+
+      // Category breakdown across all tracked months
+      const catTotals={};
+      for(let m=0;m<12;m++){
+        const d=allData[mkKey(year,m)];
+        if(!d) continue;
+        d.expenses.forEach(e=>{
+          if(!catTotals[e.name]) catTotals[e.name]=0;
+          catTotals[e.name]+=(e.amount||0);
+        });
+      }
+      const catRows=Object.entries(catTotals)
+        .filter(([,v])=>v>0)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([name,total])=>[
+          name,
+          fmtN(total),
+          ytdGross>0?(total/ytdGross*100).toFixed(1)+'%':'—',
+          counted>0?fmtN(total/counted)+'/mo':'—',
+        ]);
+
+      if(catRows.length>0){
+        // Check if fits on current page
+        if(y>220){doc.addPage();y=20;}
+        doc.setFont('helvetica','bold');
+        doc.setFontSize(9);
+        doc.setTextColor(107,127,163);
+        doc.text('ANNUAL EXPENSE BREAKDOWN BY CATEGORY',14,y);
+        y+=4;
+
+        catRows.push([
+          {content:'TOTAL',styles:{fontStyle:'bold',textColor:[232,237,245]}},
+          {content:fmtN(ytdExp),styles:{fontStyle:'bold',textColor:[255,77,109]}},
+          {content:ytdGross>0?(ytdExp/ytdGross*100).toFixed(1)+'%':'—',styles:{fontStyle:'bold'}},
+          {content:counted>0?fmtN(ytdExp/counted)+'/mo':'—',styles:{fontStyle:'bold'}},
+        ]);
+
+        doc.autoTable({
+          startY:y,
+          head:[['Category','Annual Total','% of Gross','Monthly Avg']],
+          body:catRows,
+          ...autoTableStyle(),
+          columnStyles:{0:{cellWidth:80},1:{cellWidth:35,halign:'right'},2:{cellWidth:30,halign:'right'},3:{cellWidth:35,halign:'right'}},
+        });
+      }
+
+      // Footer on all pages
+      const totalPages=doc.internal.getNumberOfPages();
+      const pH=doc.internal.pageSize.getHeight();
+      for(let p=1;p<=totalPages;p++){
+        doc.setPage(p);
+        doc.setFillColor(17,24,39);
+        doc.rect(0,pH-12,W,12,'F');
+        doc.setFont('helvetica','normal');
+        doc.setFontSize(7);
+        doc.setTextColor(61,79,110);
+        doc.text('Finance Pulse — Annual Financial Report '+year,14,pH-4);
+        doc.text(`Page ${p} of ${totalPages}`,W-14,pH-4,{align:'right'});
+      }
+
+      doc.save(`FinancePulse_Annual_${year}.pdf`);
+      showToast(`✓ Annual ${year} PDF downloaded!`);
+    }catch(e){console.error(e);showToast('Error generating PDF. Check console.');}
+  },50);
+}
 </script>
 </body>
 </html>
