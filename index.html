@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finance Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --surface3: #1f2d42;
+    --border: #1e2d45;
+    --border2: #263347;
+    --text: #e8edf5;
+    --text-muted: #6b7fa3;
+    --text-dim: #3d4f6e;
+    --green: #00d68f;
+    --green-dim: rgba(0,214,143,0.12);
+    --green-glow: rgba(0,214,143,0.25);
+    --orange: #ff8c42;
+    --orange-dim: rgba(255,140,66,0.12);
+    --orange-glow: rgba(255,140,66,0.25);
+    --blue: #4d9fff;
+    --blue-dim: rgba(77,159,255,0.12);
+    --red: #ff4d6d;
+    --red-dim: rgba(255,77,109,0.1);
+    --yellow: #ffd166;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Sora', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 20% -10%, rgba(0,214,143,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(77,159,255,0.07) 0%, transparent 60%);
+  }
+
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    animation: fadeDown 0.5s ease both;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 40px; height: 40px;
+    background: linear-gradient(135deg, var(--green), var(--blue));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+  .logo-text span { color: var(--green); }
+
+  .header-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: right;
+  }
+
+  /* ── GRID ── */
+  .grid-main {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+
+  .grid-right {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  }
+
+  .card-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  /* ── INPUTS ── */
+  .field {
+    margin-bottom: 16px;
+  }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 7px;
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-prefix {
+    position: absolute;
+    left: 13px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text-muted);
+    pointer-events: none;
+  }
+
+  input[type="number"], input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    padding: 11px 13px 11px 26px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -moz-appearance: textfield;
+  }
+
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  input[type="number"]:focus, input[type="text"]:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(77,159,255,0.12);
+  }
+
+  .tax-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .tax-row input { flex: 1; }
+  .tax-badge {
+    background: var(--orange-dim);
+    border: 1px solid rgba(255,140,66,0.2);
+    color: var(--orange);
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    padding: 4px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── STAT CARDS ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 14px;
+    animation: fadeUp 0.5s 0.15s ease both;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  }
+
+  .stat-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+
+  .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  .stat-card.green .stat-value { color: var(--green); }
+  .stat-card.orange .stat-value { color: var(--orange); }
+  .stat-card.blue .stat-value { color: var(--blue); }
+
+  .stat-glow-green { box-shadow: 0 0 30px rgba(0,214,143,0.06); }
+  .stat-glow-orange { box-shadow: 0 0 30px rgba(255,140,66,0.06); }
+  .stat-glow-blue { box-shadow: 0 0 30px rgba(77,159,255,0.06); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-section {
+    animation: fadeUp 0.5s 0.2s ease both;
+  }
+
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  .progress-track {
+    background: var(--surface2);
+    border-radius: 100px;
+    height: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 100px;
+    transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.4s ease;
+    position: relative;
+    background: linear-gradient(90deg, var(--green), var(--blue));
+  }
+
+  .progress-fill.warning {
+    background: linear-gradient(90deg, var(--orange), #ff6b2b);
+    box-shadow: 0 0 12px rgba(255,140,66,0.4);
+  }
+
+  .progress-fill.danger {
+    background: linear-gradient(90deg, var(--red), var(--orange));
+    box-shadow: 0 0 12px rgba(255,77,109,0.4);
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+    animation: shimmer 2s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .progress-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .progress-pct.safe { color: var(--green); }
+  .progress-pct.warning { color: var(--orange); }
+  .progress-pct.danger { color: var(--red); }
+
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── EXPENSE LIST ── */
+  .expenses-section {
+    animation: fadeUp 0.5s 0.25s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+
+  .expense-grid-header {
+    display: grid;
+    grid-template-columns: 1fr 140px 42px;
+    gap: 10px;
+    padding: 0 4px 10px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+
+  .expense-grid-header span {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .expense-item {
+    display: grid;
+    grid-template-columns: 1fr 140px 42px;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 4px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+    animation: slideIn 0.3s ease both;
+  }
+
+  .expense-item:hover { background: var(--surface2); }
+
+  .expense-category-tag {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .cat-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .expense-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .expense-item input[type="number"] {
+    padding-left: 26px;
+    font-size: 13px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .expense-item input[type="text"] {
+    padding-left: 13px;
+    font-size: 13px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .btn-delete {
+    width: 30px; height: 30px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+    justify-self: center;
+  }
+
+  .btn-delete:hover {
+    background: var(--red-dim);
+    border-color: rgba(255,77,109,0.3);
+    color: var(--red);
+  }
+
+  /* ── ADD EXPENSE ── */
+  .add-row {
+    display: grid;
+    grid-template-columns: 1fr 140px 42px;
+    gap: 10px;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .add-row input[type="text"] { padding-left: 13px; }
+
+  .btn-add {
+    width: 30px; height: 30px;
+    background: var(--green-dim);
+    border: 1px solid rgba(0,214,143,0.25);
+    border-radius: 8px;
+    color: var(--green);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    font-weight: 300;
+    transition: all 0.15s;
+    justify-self: center;
+  }
+
+  .btn-add:hover {
+    background: rgba(0,214,143,0.2);
+    box-shadow: 0 0 12px var(--green-glow);
+  }
+
+  /* ── PIE CHART ── */
+  .chart-section {
+    animation: fadeUp 0.5s 0.3s ease both;
+  }
+
+  .pie-wrap {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    margin-top: 8px;
+  }
+
+  svg.pie { flex-shrink: 0; overflow: visible; }
+
+  .legend {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .legend-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .legend-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .legend-name {
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .legend-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  /* ── LEFT PANEL ── */
+  .left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    animation: fadeUp 0.5s 0.1s ease both;
+    position: sticky;
+    top: 24px;
+  }
+
+  /* ── SAVINGS HIGHLIGHT ── */
+  .savings-highlight {
+    background: linear-gradient(135deg, rgba(0,214,143,0.08), rgba(0,214,143,0.03));
+    border: 1px solid rgba(0,214,143,0.2);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+  }
+
+  .savings-highlight.negative {
+    background: linear-gradient(135deg, rgba(255,77,109,0.08), rgba(255,77,109,0.03));
+    border-color: rgba(255,77,109,0.2);
+  }
+
+  .savings-big {
+    font-family: 'DM Mono', monospace;
+    font-size: 38px;
+    font-weight: 500;
+    letter-spacing: -2px;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  .savings-big.negative { color: var(--red); }
+  .savings-rate-label { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+  .rate-badge {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 14px;
+    background: var(--green-dim);
+    border: 1px solid rgba(0,214,143,0.2);
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--green);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .rate-badge.negative {
+    background: var(--red-dim);
+    border-color: rgba(255,77,109,0.2);
+    color: var(--red);
+  }
+
+  /* ── SUMMARY TABLE ── */
+  .summary-rows { margin-top: 4px; }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+
+  .summary-row:last-child { border-bottom: none; }
+
+  .summary-row .label { color: var(--text-muted); }
+  .summary-row .value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .summary-row.total {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border2);
+    border-bottom: none;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .value.green { color: var(--green); }
+  .value.orange { color: var(--orange); }
+  .value.red { color: var(--red); }
+  .value.blue { color: var(--blue); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    border-radius: var(--radius-sm);
+    padding: 8px 16px;
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+
+  .btn:hover {
+    background: var(--surface3);
+    border-color: rgba(255,255,255,0.1);
+  }
+
+  .btn-green {
+    background: var(--green-dim);
+    border-color: rgba(0,214,143,0.25);
+    color: var(--green);
+  }
+
+  .btn-green:hover {
+    background: rgba(0,214,143,0.18);
+    box-shadow: 0 0 14px var(--green-glow);
+  }
+
+  /* ── NO DATA ── */
+  .no-expenses {
+    text-align: center;
+    padding: 24px;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── CATEGORY SELECT ── */
+  select {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-family: 'Sora', sans-serif;
+    font-size: 12px;
+    padding: 8px 13px;
+    outline: none;
+    cursor: pointer;
+    width: 100%;
+    transition: border-color 0.2s;
+  }
+
+  select:focus { border-color: var(--blue); }
+  select option { background: var(--surface); }
+
+  /* ── DIVIDER ── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 4px 0;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 800px) {
+    .grid-main { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .left-panel { position: static; }
+    .pie-wrap { flex-direction: column; }
+  }
+
+  @media (max-width: 500px) {
+    .stats-row { grid-template-columns: 1fr; }
+    .app { padding: 20px 16px 60px; }
+  }
+
+  /* pulse animation for savings */
+  @keyframes pulse-green {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0,214,143,0.3); }
+    50% { box-shadow: 0 0 0 8px rgba(0,214,143,0); }
+  }
+
+  .savings-highlight { animation: pulse-green 3s ease infinite; }
+  .savings-highlight.negative { animation: none; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">Finance<span>Pulse</span></div>
+    </div>
+    <div class="header-date">
+      <div id="date-display"></div>
+      <div style="color:var(--text-dim);margin-top:3px;font-size:11px;">Monthly Overview</div>
+    </div>
+  </header>
+
+  <!-- STATS ROW -->
+  <div class="stats-row">
+    <div class="stat-card green stat-glow-green">
+      <div class="stat-label">Gross Income</div>
+      <div class="stat-value" id="stat-gross">$0</div>
+      <div class="stat-sub">Before tax</div>
+    </div>
+    <div class="stat-card orange stat-glow-orange">
+      <div class="stat-label">Total Expenses</div>
+      <div class="stat-value" id="stat-expenses">$0</div>
+      <div class="stat-sub">All categories</div>
+    </div>
+    <div class="stat-card blue stat-glow-blue">
+      <div class="stat-label">Tax Deduction</div>
+      <div class="stat-value" id="stat-tax">$0</div>
+      <div class="stat-sub" id="stat-tax-rate">@ 20% rate</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="grid-main" style="margin-top:20px;">
+
+    <!-- LEFT: Income + Summary -->
+    <div class="left-panel">
+
+      <!-- Income Card -->
+      <div class="card">
+        <div class="card-label">💰 Income Setup</div>
+
+        <div class="field">
+          <label>Monthly Base Salary</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="salary" placeholder="0.00" min="0" step="100">
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Other Income (freelance, dividends…)</label>
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="other-income" placeholder="0.00" min="0" step="100">
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="field" style="margin-top:16px;margin-bottom:0;">
+          <label>Estimated Tax Rate (%)</label>
+          <div class="tax-row">
+            <div class="input-wrap" style="flex:1;">
+              <span class="input-prefix" style="left:13px;">%</span>
+              <input type="number" id="tax-rate" value="20" min="0" max="60" step="1" style="padding-left:26px;">
+            </div>
+            <span class="tax-badge" id="tax-amount-badge">$0 / mo</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Savings Highlight -->
+      <div class="savings-highlight" id="savings-card">
+        <div class="savings-rate-label">REMAINING BALANCE</div>
+        <div class="savings-big" id="savings-value">$0</div>
+        <div class="savings-rate-label" style="margin-top:8px;">Savings Rate</div>
+        <div class="rate-badge" id="savings-rate-badge">0.0%</div>
+      </div>
+
+      <!-- Summary -->
+      <div class="card">
+        <div class="card-label">📊 Monthly Summary</div>
+        <div class="summary-rows">
+          <div class="summary-row">
+            <span class="label">Gross Income</span>
+            <span class="value blue" id="sum-gross">$0.00</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Income Tax</span>
+            <span class="value orange" id="sum-tax">-$0.00</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Net After Tax</span>
+            <span class="value" id="sum-net">$0.00</span>
+          </div>
+          <div class="summary-row">
+            <span class="label">Total Expenses</span>
+            <span class="value red" id="sum-expenses">-$0.00</span>
+          </div>
+          <div class="summary-row total">
+            <span class="label">💵 Remaining</span>
+            <span class="value green" id="sum-remaining">$0.00</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="grid-right">
+
+      <!-- Progress -->
+      <div class="card progress-section">
+        <div class="card-label">📈 Spending vs Net Income</div>
+        <div class="progress-header">
+          <span style="font-size:13px;color:var(--text-muted);" id="progress-label">$0 of $0 spent</span>
+          <span class="progress-pct safe" id="progress-pct">0%</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+        <div class="progress-labels">
+          <span>$0</span>
+          <span id="progress-mid">50%</span>
+          <span id="progress-max">$0</span>
+        </div>
+      </div>
+
+      <!-- Expense List -->
+      <div class="card expenses-section">
+        <div class="section-header">
+          <div class="card-label" style="margin-bottom:0;">🧾 Expense Tracker</div>
+        </div>
+
+        <div class="expense-grid-header">
+          <span>Category / Name</span>
+          <span>Amount</span>
+          <span></span>
+        </div>
+
+        <div id="expense-list"></div>
+
+        <!-- Add New Row -->
+        <div class="add-row">
+          <input type="text" id="new-name" placeholder="New expense name…">
+          <div class="input-wrap">
+            <span class="input-prefix">$</span>
+            <input type="number" id="new-amount" placeholder="0.00" min="0" step="10">
+          </div>
+          <button class="btn-add" onclick="addExpense()" title="Add expense">+</button>
+        </div>
+      </div>
+
+      <!-- Pie Chart -->
+      <div class="card chart-section">
+        <div class="card-label">🥧 Spending Breakdown</div>
+        <div class="pie-wrap">
+          <svg class="pie" width="160" height="160" viewBox="0 0 160 160" id="pie-svg">
+            <circle cx="80" cy="80" r="60" fill="var(--surface2)" />
+            <text x="80" y="76" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-family="Sora,sans-serif">No data</text>
+            <text x="80" y="91" text-anchor="middle" fill="var(--text-dim)" font-size="10" font-family="Sora,sans-serif">yet</text>
+          </svg>
+          <div class="legend" id="pie-legend">
+            <div style="color:var(--text-dim);font-size:12px;">Add expenses to see breakdown</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ── CATEGORY CONFIG ──
+const CAT_COLORS = {
+  'Rent/Mortgage': '#4d9fff',
+  'Groceries':     '#00d68f',
+  'Utilities':     '#ffd166',
+  'Transport':     '#a78bfa',
+  'Subscriptions': '#2dd4bf',
+  'Fun Money':     '#ff8c42',
+  'Other':         '#6b7fa3',
+};
+
+const PRESET_CATS = ['Rent/Mortgage','Groceries','Utilities','Transport','Subscriptions','Fun Money'];
+
+function catColor(name) {
+  if (CAT_COLORS[name]) return CAT_COLORS[name];
+  // generate stable color from string
+  let h = 0;
+  for (let c of name) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return `hsl(${h},65%,60%)`;
+}
+
+// ── STATE ──
+let state = {
+  salary: 0,
+  otherIncome: 0,
+  taxRate: 20,
+  expenses: []
+};
+
+function loadState() {
+  try {
+    const saved = localStorage.getItem('finance-pulse-v2');
+    if (saved) state = JSON.parse(saved);
+  } catch(e) {}
+}
+
+function saveState() {
+  localStorage.setItem('finance-pulse-v2', JSON.stringify(state));
+}
+
+// ── INIT ──
+function init() {
+  loadState();
+
+  // Seed preset categories if first visit
+  if (state.expenses.length === 0) {
+    state.expenses = PRESET_CATS.map((cat, i) => ({
+      id: Date.now() + i,
+      name: cat,
+      amount: 0
+    }));
+  }
+
+  document.getElementById('salary').value = state.salary || '';
+  document.getElementById('other-income').value = state.otherIncome || '';
+  document.getElementById('tax-rate').value = state.taxRate;
+
+  renderExpenses();
+  recalc();
+  setDate();
+}
+
+function setDate() {
+  const d = new Date();
+  document.getElementById('date-display').textContent =
+    d.toLocaleDateString('en-US', { weekday:'short', month:'long', year:'numeric' });
+}
+
+// ── EVENTS ──
+document.getElementById('salary').addEventListener('input', e => {
+  state.salary = parseFloat(e.target.value) || 0;
+  saveState(); recalc();
+});
+
+document.getElementById('other-income').addEventListener('input', e => {
+  state.otherIncome = parseFloat(e.target.value) || 0;
+  saveState(); recalc();
+});
+
+document.getElementById('tax-rate').addEventListener('input', e => {
+  state.taxRate = Math.min(60, Math.max(0, parseFloat(e.target.value) || 0));
+  saveState(); recalc();
+});
+
+document.getElementById('new-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addExpense();
+});
+document.getElementById('new-amount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addExpense();
+});
+
+// ── ADD EXPENSE ──
+function addExpense() {
+  const nameEl = document.getElementById('new-name');
+  const amtEl  = document.getElementById('new-amount');
+  const name   = nameEl.value.trim();
+  const amount = parseFloat(amtEl.value) || 0;
+
+  if (!name) { nameEl.focus(); return; }
+
+  state.expenses.push({ id: Date.now(), name, amount });
+  nameEl.value = '';
+  amtEl.value = '';
+
+  saveState();
+  renderExpenses();
+  recalc();
+}
+
+// ── DELETE EXPENSE ──
+function deleteExpense(id) {
+  state.expenses = state.expenses.filter(e => e.id !== id);
+  saveState();
+  renderExpenses();
+  recalc();
+}
+
+// ── RENDER EXPENSES ──
+function renderExpenses() {
+  const list = document.getElementById('expense-list');
+  list.innerHTML = '';
+
+  if (state.expenses.length === 0) {
+    list.innerHTML = '<div class="no-expenses">No expenses yet. Add one below ↓</div>';
+    return;
+  }
+
+  state.expenses.forEach(exp => {
+    const row = document.createElement('div');
+    row.className = 'expense-item';
+    row.dataset.id = exp.id;
+
+    const color = catColor(exp.name);
+
+    row.innerHTML = `
+      <div class="expense-category-tag">
+        <div class="cat-dot" style="background:${color}"></div>
+        <span class="expense-name" title="${exp.name}">${exp.name}</span>
+      </div>
+      <div class="input-wrap">
+        <span class="input-prefix">$</span>
+        <input type="number" value="${exp.amount || ''}" placeholder="0.00"
+          min="0" step="10"
+          onchange="updateAmount(${exp.id}, this.value)"
+          oninput="updateAmount(${exp.id}, this.value)">
+      </div>
+      <button class="btn-delete" onclick="deleteExpense(${exp.id})" title="Remove">✕</button>
+    `;
+
+    list.appendChild(row);
+  });
+}
+
+function updateAmount(id, val) {
+  const exp = state.expenses.find(e => e.id === id);
+  if (exp) {
+    exp.amount = parseFloat(val) || 0;
+    saveState();
+    recalc();
+  }
+}
+
+// ── RECALCULATE ──
+function recalc() {
+  const gross    = state.salary + state.otherIncome;
+  const tax      = gross * (state.taxRate / 100);
+  const net      = gross - tax;
+  const expenses = state.expenses.reduce((s, e) => s + (e.amount || 0), 0);
+  const remaining = net - expenses;
+  const savingsRate = gross > 0 ? (remaining / gross * 100) : 0;
+  const spentPct  = net > 0 ? Math.min(expenses / net * 100, 100) : 0;
+
+  const fmt = n => '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+  const fmtS = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2,maximumFractionDigits:2});
+
+  // Stats row
+  document.getElementById('stat-gross').textContent    = fmt(gross);
+  document.getElementById('stat-expenses').textContent = fmt(expenses);
+  document.getElementById('stat-tax').textContent      = fmt(tax);
+  document.getElementById('stat-tax-rate').textContent = `@ ${state.taxRate}% rate`;
+
+  // Tax badge
+  document.getElementById('tax-amount-badge').textContent = fmt(tax) + ' / mo';
+
+  // Savings highlight
+  const savCard = document.getElementById('savings-card');
+  const savVal  = document.getElementById('savings-value');
+  const savBadge = document.getElementById('savings-rate-badge');
+  savVal.textContent = fmtS(remaining);
+  savBadge.textContent = savingsRate.toFixed(1) + '%';
+  if (remaining < 0) {
+    savCard.classList.add('negative');
+    savVal.classList.add('negative');
+    savBadge.classList.add('negative');
+  } else {
+    savCard.classList.remove('negative');
+    savVal.classList.remove('negative');
+    savBadge.classList.remove('negative');
+  }
+
+  // Summary
+  document.getElementById('sum-gross').textContent    = fmt(gross);
+  document.getElementById('sum-tax').textContent      = '-' + fmt(tax);
+  document.getElementById('sum-net').textContent      = fmt(net);
+  document.getElementById('sum-expenses').textContent = '-' + fmt(expenses);
+  const sumRem = document.getElementById('sum-remaining');
+  sumRem.textContent = fmtS(remaining);
+  sumRem.className = 'value ' + (remaining >= 0 ? 'green' : 'red');
+
+  // Progress bar
+  const fill = document.getElementById('progress-fill');
+  const pctEl = document.getElementById('progress-pct');
+  fill.style.width = spentPct + '%';
+  pctEl.textContent = spentPct.toFixed(1) + '%';
+
+  if (spentPct >= 100) {
+    fill.className = 'progress-fill danger';
+    pctEl.className = 'progress-pct danger';
+  } else if (spentPct >= 80) {
+    fill.className = 'progress-fill warning';
+    pctEl.className = 'progress-pct warning';
+  } else {
+    fill.className = 'progress-fill';
+    pctEl.className = 'progress-pct safe';
+  }
+
+  document.getElementById('progress-label').textContent =
+    `${fmt(expenses)} of ${fmt(net)} spent`;
+  document.getElementById('progress-max').textContent = fmt(net);
+
+  // Pie chart
+  renderPie();
+}
+
+// ── PIE CHART ──
+function renderPie() {
+  const svg = document.getElementById('pie-svg');
+  const legend = document.getElementById('pie-legend');
+
+  const items = state.expenses.filter(e => e.amount > 0);
+  const total = items.reduce((s,e) => s + e.amount, 0);
+
+  if (total === 0 || items.length === 0) {
+    svg.innerHTML = `
+      <circle cx="80" cy="80" r="60" fill="var(--surface2)" />
+      <text x="80" y="76" text-anchor="middle" fill="var(--text-muted)" font-size="11" font-family="Sora,sans-serif">No data</text>
+      <text x="80" y="91" text-anchor="middle" fill="var(--text-dim)" font-size="10" font-family="Sora,sans-serif">yet</text>
+    `;
+    legend.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">Add expenses to see breakdown</div>';
+    return;
+  }
+
+  // Build pie segments
+  const cx = 80, cy = 80, r = 60, innerR = 30;
+  let html = '';
+  let angle = -Math.PI / 2;
+
+  // Sort by amount desc
+  const sorted = [...items].sort((a,b) => b.amount - a.amount);
+
+  sorted.forEach(exp => {
+    const slice = (exp.amount / total) * Math.PI * 2;
+    const x1 = cx + r * Math.cos(angle);
+    const y1 = cy + r * Math.sin(angle);
+    const x2 = cx + r * Math.cos(angle + slice);
+    const y2 = cy + r * Math.sin(angle + slice);
+    const ix1 = cx + innerR * Math.cos(angle);
+    const iy1 = cy + innerR * Math.sin(angle);
+    const ix2 = cx + innerR * Math.cos(angle + slice);
+    const iy2 = cy + innerR * Math.sin(angle + slice);
+    const large = slice > Math.PI ? 1 : 0;
+    const color = catColor(exp.name);
+
+    html += `<path d="M${ix1},${iy1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${ix2},${iy2} A${innerR},${innerR} 0 ${large},0 ${ix1},${iy1} Z"
+      fill="${color}" opacity="0.9" stroke="var(--surface)" stroke-width="1.5">
+      <title>${exp.name}: $${exp.amount.toLocaleString()}</title>
+    </path>`;
+    angle += slice;
+  });
+
+  // Center
+  html += `
+    <circle cx="${cx}" cy="${cy}" r="${innerR}" fill="var(--surface)" />
+    <text x="${cx}" y="${cy - 5}" text-anchor="middle" fill="var(--text)" font-size="11" font-weight="600" font-family="DM Mono,monospace">$${(total/1000).toFixed(1)}k</text>
+    <text x="${cx}" y="${cy + 10}" text-anchor="middle" fill="var(--text-muted)" font-size="9" font-family="Sora,sans-serif">total</text>
+  `;
+  svg.innerHTML = html;
+
+  // Legend
+  legend.innerHTML = sorted.slice(0, 8).map(exp => {
+    const pct = (exp.amount / total * 100).toFixed(1);
+    const color = catColor(exp.name);
+    return `
+      <div class="legend-item">
+        <div class="legend-left">
+          <div class="legend-dot" style="background:${color}"></div>
+          <span class="legend-name">${exp.name}</span>
+        </div>
+        <span class="legend-val">$${exp.amount.toLocaleString()} <span style="color:var(--text-dim)">${pct}%</span></span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ── START ──
+init();
+</script>
+</body>
+</html>
